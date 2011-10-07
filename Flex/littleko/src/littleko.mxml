@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" backgroundColor="#FFFFFF" creationComplete= "myservice.getOperation('request').send()">  
+	<mx:RemoteObject id="myservice" source="littleko.RequestDB" destination="amfphp" fault="faultHandler(event)" showBusyCursor="true">
+    	<mx:method name="request" result="getListHandler(event)" fault="faultHandler(event)"/>	   	   
+    </mx:RemoteObject>     
+    
+    <mx:Script>
+	<![CDATA[
+		import mx.events.ItemClickEvent;
+	    import flash.net.FileReference;
+	    import flash.events.Event;
+	    import flash.net.FileFilter;
+	    import flash.display.Loader;
+		import mx.rpc.events.ResultEvent;
+		import mx.collections.ArrayCollection;
+		import mx.utils.ArrayUtil;
+		import mx.controls.Alert;
+        import mx.rpc.events.FaultEvent;
+        import littleko.Article;
+        import flash.net.URLRequest;
+    	
+	    [Bindable]
+        private var dataSet:ArrayCollection;
+	    
+        private function getListHandler(event:ResultEvent):void
+        {
+            dataSet = new ArrayCollection( ArrayUtil.toArray(event.result) );
+        }
+	       
+        private function faultHandler(event:FaultEvent):void
+        {
+            Alert.show(event.fault.faultString, event.fault.faultCode.toString() );
+        }    
+		
+		public function downloadCSV():void{
+			var request:URLRequest = new URLRequest("http://mira.cs.nccu.edu.tw/pfh/amfphp/services/littleko/writeCSV.php");
+			request.method = URLRequestMethod.POST;
+			navigateToURL(request, "_self");
+		}
+	]]>
+</mx:Script>
+     
+    <mx:Panel title = "Article" layout="vertical" width="100%" height="200%">
+  	 <mx:DataGrid id="dataGrid" lockedColumnCount="1" horizontalScrollPolicy="on" width="100%" height="500" dataProvider="{dataSet}" fontSize="12" textAlign="center"> 
+        <mx:columns>
+           <!--<mx:DataGridColumn headerText="Id" dataField="id"/>  -->
+           <mx:DataGridColumn headerText="文章名" dataField="name" wordWrap="true" fontAntiAliasType="advanced" minWidth="300" />  
+           <mx:DataGridColumn headerText="期刊" dataField="journalId" width="150"/>
+           <mx:DataGridColumn headerText="時間" dataField="year" width="50"/>
+           <mx:DataGridColumn headerText="期數" dataField="volume" />
+           <mx:DataGridColumn headerText="序號" dataField="serialNum"/>
+           <mx:DataGridColumn headerText="起始頁" dataField="startPage"/>
+		   <mx:DataGridColumn headerText="結束頁" dataField="endPage"/>  
+           <mx:DataGridColumn headerText="第一作者" dataField="author1" width="100" wordWrap="true"/>
+           <mx:DataGridColumn headerText="第二作者" dataField="author2" width="100" wordWrap="true"/>
+           <mx:DataGridColumn headerText="第三作者" dataField="author3" width="100" wordWrap="true"/>
+           <mx:DataGridColumn headerText="關鍵字1" dataField="keyword1" width="100" wordWrap="true"/>
+           <mx:DataGridColumn headerText="關鍵字2" dataField="keyword2" width="100" wordWrap="true"/>
+           <mx:DataGridColumn headerText="關鍵字3" dataField="keyword3" width="100" wordWrap="true"/>
+           <mx:DataGridColumn headerText="關鍵字4" dataField="keyword4" width="100" wordWrap="true"/>
+           <mx:DataGridColumn headerText="關鍵字5" dataField="keyword5" width="100" wordWrap="true"/>
+           <mx:DataGridColumn headerText="notes" dataField="notes" width="100" wordWrap="true"/>
+           <mx:DataGridColumn headerText="mehod" dataField="method"/>
+           <mx:DataGridColumn headerText="qualitative_design" dataField="qualitative_design"/>
+           <mx:DataGridColumn headerText="qualitative_describe" dataField="qualitative_describe"/>
+           <mx:DataGridColumn headerText="quantitative_design" dataField="quantitative_design"/>
+           <mx:DataGridColumn headerText="quantitative_describe" dataField="quantitative_describe"/>           
+        </mx:columns>  
+     </mx:DataGrid>
+     <mx:Button id="write" label="Download CSV" click="downloadCSV()" bottom="10"/>
+    </mx:Panel>
+</mx:Application>

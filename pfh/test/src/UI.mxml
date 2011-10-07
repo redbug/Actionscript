@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application 
+    xmlns:mx="http://www.adobe.com/2006/mxml" 
+    layout="absolute" 
+    creationComplete="userRequest.send()" 
+>
+      
+<mx:Script>
+	<![CDATA[
+	    import flash.net.FileReference;
+	    import flash.events.Event;
+	    import flash.net.FileFilter;
+	    import flash.display.Loader;
+		
+		private var file:FileReference = new FileReference();
+	    private var fileFilter:FileFilter = new FileFilter("Images", "*.png;*.gif;*.jpg;*.JPG;*.GIF");
+	    private var _loader:Loader = new Loader();
+	        
+	    public function onSelectFile(event:Event):void{
+	    	picPath.text = file.name
+	    }
+	     
+	    public function uploadPic():void{	
+	    	try{
+				file.addEventListener(Event.SELECT, selectHandler);
+				file.addEventListener(Event.COMPLETE, completedHandler);
+				file.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA   , uploadCompleteHandler);
+				file.browse([fileFilter]);  
+			}catch(illeglOperation:IllegalOperationError){
+				trace("something wrong");
+			}
+	    }
+	    
+	    public function completedHandler(event:Event):void{
+	    	trace("file uploaded completed");
+
+	    }
+	    
+	    public function selectHandler(event:Event):void{
+	    	picPath.text = file.name;
+	    	var request:URLRequest = new URLRequest("http://mira.cs.nccu.edu.tw/pfh/picUpload.php");
+	    	try{
+	    		file.upload(request);
+	    	}catch(error:Error){
+	    		testArea.text="error";
+	    	}
+	    }
+	    
+	    public function uploadCompleteHandler(event:DataEvent):void {
+          testArea.text = event.data as String;
+          
+  //        testArea.text += dgUserRequest.toString();
+          trace("a:" + event.target);
+          trace("b:" + event.currentTarget);
+        }
+		
+		public function submit():void{
+			userRequest.send();
+			testArea.text = "success!!";
+		}
+	
+	]]>
+</mx:Script>
+
+    <mx:Panel
+        title="Join Us!!"
+        x="50" y="10" 
+        paddingBottom="10" paddingTop="10" 
+        paddingLeft="10" paddingRight="10"
+    >
+        <mx:Text 
+            text="上傳照片:" 
+            width="100%" 
+        />            
+        <mx:TextInput id="picPath" />
+        <mx:Box direction="horizontal" borderStyle="none">
+        <mx:Button id="upload" label="Upload" click="uploadPic()"/>        
+        </mx:Box>
+        
+        <mx:Label text="Student Id:" />
+        <mx:TextInput id="sId" />
+        
+        <mx:Label text="Name" />
+        <mx:TextInput id="userName" />
+        
+        <mx:Label text="Club:" />
+        <mx:ComboBox id="club" width="100%" >
+        	<mx:Array>
+        		<mx:Object data="0" label="熱舞社"/>
+        		<mx:Object data="1" label="吉它社"/>
+        		<mx:Object data="2" label="禪學社"/>
+        		<mx:Object data="3" label="跆拳社"/>
+        	</mx:Array>
+        </mx:ComboBox>
+		<mx:Button label="Submit" click="submit()"/> 
+		<mx:TextArea id="testArea"/>
+    </mx:Panel>
+       
+    <mx:Panel title = "Display" x="350" y="10">
+   	 <mx:DataGrid id="dgUserRequest" dataProvider="{userRequest.lastResult.users.user}"> 
+        <mx:columns>  
+           <mx:DataGridColumn headerText="User ID" dataField="sId"/>  
+           <mx:DataGridColumn headerText="User Name" dataField="userName"/>
+           <mx:DataGridColumn headerText="Club" dataField="club"/>
+           <mx:DataGridColumn headerText="picPath" dataField="picPath"/>  
+        </mx:columns>  
+     </mx:DataGrid>
+    </mx:Panel>
+   
+   <mx:HTTPService id="userRequest" url="http://mira.cs.nccu.edu.tw/pfh/requestDB.php" useProxy="false" method="POST">  
+  		<mx:request xmlns="">  
+  		    <sId>{sId.text}</sId>
+     		<userName>{userName.text}</userName>
+     		<club>{club.text}</club>
+     		<picPath>{picPath.text}</picPath>	
+  		</mx:request>  
+   </mx:HTTPService>  
+</mx:Application>

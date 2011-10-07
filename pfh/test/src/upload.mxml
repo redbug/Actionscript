@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" backgroundColor="#f6f6f6" backgroundGradientColors="[#f6f6f6, #bbbbbb]">
+
+   <mx:Label x="10" y="10" text="File Upload" fontSize="20" fontWeight="bold"/>
+   <mx:HRule x="10" y="49" width="80%"/>
+   
+   <mx:Button x="10" y="59" label="Upload" click="{uploader()}"/>
+   
+   <mx:Script>
+      <![CDATA[
+      import flash.events.DataEvent;
+      
+      public var fileRef:FileReference = new FileReference();
+      
+      public function uploader():void {
+
+         fileRef.addEventListener(Event.SELECT, selectHandler);
+         fileRef.addEventListener(Event.COMPLETE, completeHandler);
+         fileRef.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA   , uploadCompleteHandler);
+         
+         try {
+             var success:Boolean = fileRef.browse();
+         }
+         catch (error:Error) {
+             trace("Unable to browse for files.");
+         }
+      }
+      
+      public function selectHandler(event:Event):void {
+          //var request:URLRequest = new URLRequest("http://140.112.31.185/flex/php/upload.php");
+          var request:URLRequest = new URLRequest("http://mira.cs.nccu.edu.tw/pfh/picUpload.php");
+          try {
+              fileRef.upload(request);
+              textarea1.text = "uploading " + fileRef.name + "...";
+          }
+          catch (error:Error) {
+              trace("Unable to upload file.");
+          }
+      }
+      
+      public function completeHandler(event:Event):void {
+          trace("file uploaded complete");
+      }
+      
+      public function uploadCompleteHandler(event:DataEvent):void {
+          trace("uploaded... response from server: \n" + String(event.data));
+          textarea1.text += event.data as String;
+      }
+      
+      ]]>
+   </mx:Script>
+   
+   <mx:TextArea x="10" y="89" width="327" height="134" id="textarea1"/>
+
+</mx:Application>

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" creationComplete="Tutorial();">
+<mx:Script>
+	<![CDATA[
+		import flare.display.TextSprite;
+		import flare.vis.operator.layout.RadialTreeLayout;
+		import flare.vis.operator.layout.IndentedTreeLayout;
+		import flare.vis.operator.layout.NodeLinkTreeLayout;
+		import flare.vis.operator.OperatorSwitch;
+		import flare.vis.operator.layout.Layout;
+		import flare.vis.operator.layout.RandomLayout;
+		import flare.vis.operator.layout.CircleLayout;
+		import flare.vis.data.render.ShapeRenderer;
+		import flare.vis.controls.PanZoomControl;
+		import flare.vis.controls.DragControl;
+		import flare.vis.util.Filters;
+		import flare.vis.operator.layout.ForceDirectedLayout;
+		import flare.vis.data.EdgeSprite;
+		import flare.vis.data.NodeSprite;
+		import flare.physics.Simulation;
+		import mx.collections.ArrayCollection;
+		import flare.data.DataSource;
+	    import flare.vis.Visualization;
+	    import flare.vis.data.Data;
+	    import flare.vis.operator.encoder.ColorEncoder;
+	    import flare.vis.operator.encoder.ShapeEncoder;
+	    import flare.vis.operator.layout.AxisLayout;
+	    import flare.vis.palette.ColorPalette;
+	    import flash.display.Sprite;
+	    import flash.events.Event;
+	    import flash.geom.Rectangle;
+	    import flash.net.URLLoader;
+	    
+	    public var vis:Visualization;
+	    var con:Sprite = new Sprite();
+		public var point:Point;
+		
+	    public function Tutorial():void{
+	            loadData();
+		}
+	
+		public function loadData():void {
+			var data:Data = new Data();
+			var objNodes:Object = new Object();
+			var myXML:XML = new XML(); 
+			var myXMLURL:URLRequest = new URLRequest("data.xml"); 
+			var loader:URLLoader = new URLLoader(myXMLURL);
+			 
+			loader.addEventListener(Event.COMPLETE, function(evt:Event):void{
+				myXML = XML(loader.data);	
+				var n:NodeSprite;
+				var e:EdgeSprite;
+				for each(var node:XML in myXML.nodes.node){
+					var id:String = node.attribute("id").toString();
+					var name:String = node.attribute("name").toString();
+					var count:Number = new Number(node.attribute("count").toString());
+	
+					n = newNode(id, name, count);
+					data.addNode(n);
+					objNodes[id] = n;
+				}
+
+				for each(var edge:XML in myXML.links.link){
+					var source:String = edge.attribute("source").toString();
+					var target:String = edge.attribute("target").toString();
+					count = new Number(node.attribute("count").toString());
+					
+					e = newEdge(objNodes[source], objNodes[target], count);
+					data.addEdge(e);
+				}
+				buildVis(data);
+			});
+		}
+	
+		public var yAxis:Number = 0;
+		public var xAxis:Number = 0;
+		private function newNode(id:String, name:String, rads:Number):NodeSprite {
+			var ns:NodeSprite = new NodeSprite();
+			ns.data.label = name;
+			ns.data.id = id;
+			ns.data.rad = rads;
+			
+			var pt:Point = this.myPanel.contentToGlobal(new Point(20 * xAxis, 20 * yAxis));
+			ns.x = pt.x;
+			ns.y = pt.y;
+			yAxis = yAxis + 1;
+			xAxis = xAxis + 1;
+
+			return ns;
+			
+		}
+		
+	    private function newEdge(source:NodeSprite, target:NodeSprite, count:Number):EdgeSprite{
+	    	var es:EdgeSprite = new EdgeSprite(source, target, false);
+	    	es.data.count =  count;
+	    	return es;
+	    }
+	    
+	    private function buildVis(data:Data):void{
+			vis = new Visualization(data);
+				
+			
+			new DragControl(vis);
+			var kk:ForceDirectedLayout = new ForceDirectedLayout();
+			kk.defaultSpringLength=100;
+			vis.operators.add(kk);
+			//new DragControl(vis);
+			//new PanZoomControl(vis);
+
+			vis.data.nodes.visit(function(n:NodeSprite):Boolean {
+				n.fillColor = 0x00ff00;
+				//n.fillAlpha = n.data.rad/5;
+				n.fillAlpha = 0.5;
+
+				n.lineColor = 0x00ff00; 
+				//n.lineAlpha = n.data.rad/5;
+				n.lineAlpha = 0.5;
+
+				n.mouseEnabled = false;
+				n.size = 3;
+				n.lineWidth = 1;
+				//var format:TextFormat = new TextFormat(null, null, "0xffffff", null, null, null, null, null, "center");
+				//n.addChild(new TextSprite(n.data.label,format)); 
+				
+				var request:URLRequest = new URLRequest("http://imlab.cs.nccu.edu.tw/~l314/p6.jpg");
+				var picloader:Loader = new Loader();
+				picloader.load(request);
+				picloader.scaleX=.2;
+				picloader.scaleY=.2;
+				
+				var circle:Sprite = new Sprite();
+				circle.graphics.beginFill(0xFF0000);
+				circle.graphics.drawCircle(0, 0, 30);
+				picloader.mask = circle;
+				picloader.x = circle.x - 30;
+				picloader.y = circle.y - 30;
+			
+	     	    n.addEventListener(MouseEvent.MOUSE_DOWN, function(event:Event):void{
+    				n.startDrag();
+                 
+   	   			});
+                
+                myPanel.addEventListener(MouseEvent.CLICK, function(event:Event):void{
+        			n.stopDrag();
+   	   			});
+				
+				//circle.addChild(picloader);	
+				n.addChild(circle);
+				
+				n.addChild(picloader);
+				
+				return true;
+			});
+				
+				
+			vis.data.edges.visit(function(e:EdgeSprite):Boolean{
+				e.lineColor = 0x00ff00;
+				e.lineAlpha = 1.0
+				e.lineWidth = 2;//e.data.count;
+				return true;
+			});
+					
+			vis.update();
+			vis.continuousUpdates = true;
+			
+			con.addChild(vis);
+			con.scrollRect = vis.bounds.clone();
+			this.myPanel.rawChildren.addChild(con);
+	   }
+	]]>
+</mx:Script>
+	<mx:Panel id="myPanel"  left="10" top="10" bottom="20" right="20" backgroundColor="#000000"/>
+</mx:Application>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="horizontal"
+    horizontalAlign="center"
+    verticalAlign="middle">
+    
+    <mx:Script>
+        <![CDATA[
+        	import flare.query.Variable;
+			import mx.effects.easing.Bounce;
+			import mx.validators.Validator;
+            import mx.events.ValidationResultEvent;
+            import mx.controls.Alert;
+            
+            public var sharedObj:SharedObject;
+			private var newAccountPhp:String = "http://mira.cs.nccu.edu.tw/pfh/amfphp/services/app/NewAccount.php";
+			
+            private function checkAndNewUser(event):void {
+            	var msg:String = "";
+                if(email.text == "") {
+                	msg += "* The field of e-mail can not be empty.\r";
+                } else {
+                	var mail:String = email.text;
+                	if(mail.substring(mail.indexOf("@")) != "@nccu.edu.tw") {
+                		msg += "* The field of e-mail must be [@nccu.edu.tw].\r";                		
+                	}
+                }
+                if(password.text == "" && confirmPassword.text == "") {
+                	msg += "* Please enter password and confirm.\r"
+                } else if(password.text != confirmPassword.text){
+                	msg += "* Password and Confirmation are not consistent. Please check it.\r"
+                }
+                if(msg != "") {
+                	Alert.show(msg, "ERROR");
+                } else {
+                	sharedObj = SharedObject.getLocal("account", "/");
+                	sharedObj.data.account = email.text;
+                	sharedObj.flush();
+                	
+					var request:URLRequest = new URLRequest(newAccountPhp);
+					var vars:URLVariables = new URLVariables();
+					vars.account = email.text;
+					vars.password = password.text;
+					
+					request.data = vars;
+					request.method = URLRequestMethod.POST;
+					navigateToURL(request, "_self");
+                }
+			}
+        ]]>
+
+    </mx:Script>
+
+    <mx:transitions>
+       <mx:Transition fromState="*" toState="*">
+            <mx:Parallel targets="{[loginPanel, registerLink, loginButton, confirm]}">
+                <mx:Resize duration="500" easingFunction="Bounce.easeOut"/>
+                <mx:Sequence target="{confirm}">
+                    <mx:Blur duration="200" blurYFrom="1.0" blurYTo="20.0" />            
+                    <mx:Blur duration="200" blurYFrom="20.0" blurYTo="1" />            
+                </mx:Sequence>
+            </mx:Parallel>
+        </mx:Transition>
+    </mx:transitions>
+    
+    <mx:states>
+        <mx:State name="Register" basedOn="">
+            <mx:AddChild 
+                relativeTo="{loginForm}" 
+                position="lastChild" 
+                creationPolicy="all">
+                <mx:FormItem label="Confirm Password:" id="confirm">
+                    <mx:TextInput id="confirmPassword" displayAsPassword="true" />
+                </mx:FormItem>
+            </mx:AddChild>
+            <mx:AddChild 
+                relativeTo="{loginForm}" 
+                position="lastChild" 
+                creationPolicy="all">
+                <mx:FormItem>
+                	<mx:Text width="200" color="gray" text="After entering your email and password, we will send you a confirmation mail." />
+                </mx:FormItem>
+            </mx:AddChild>
+
+            <mx:SetProperty target="{loginPanel}" name="title" value="Register" />
+            <!--<mx:SetProperty target="{loginButton}" name="label" value="Register" />-->
+            <mx:RemoveChild target="{loginButton}" />
+            <mx:RemoveChild target="{registerLink}" />
+            <mx:AddChild relativeTo="{email}" position="after">
+            	<mx:Text color="red" text="* [@nccu.edu.tw] is required." />
+            	<!--<mx:Button label="check availability" click="" />-->
+            </mx:AddChild>
+			<mx:AddChild relativeTo="{spacer1}" position="after">
+				<mx:Button label="Register" id="registerButton" click="checkAndNewUser(event);" />
+			</mx:AddChild>
+            <mx:AddChild relativeTo="{spacer1}" position="before">
+                <mx:LinkButton label="Return to Login" click="currentState=''"/>
+            </mx:AddChild>
+        </mx:State>
+    </mx:states>
+
+    <mx:Panel title="Login" id="loginPanel" width="370" fontSize="11"
+    	horizontalScrollPolicy="off" verticalScrollPolicy="off">
+	    <mx:Form id="loginForm">
+	        <mx:FormItem label="E-mail:">
+	            <mx:TextInput id="email" />
+	        </mx:FormItem>
+	        <mx:FormItem label="Password:">
+	            <mx:TextInput id="password" displayAsPassword="true" />
+	        </mx:FormItem>
+	    </mx:Form>
+		
+	    <mx:ControlBar>
+	        <mx:LinkButton label="Need to Register?" id="registerLink" click="currentState='Register'" />
+	        <mx:Spacer width="100%" id="spacer1"/>
+	        <mx:Button label="Login" id="loginButton"/>
+	    </mx:ControlBar>
+	</mx:Panel>
+	<mx:EmailValidator id="valMail" source="{email}" property="text" required="true" />
+</mx:Application>

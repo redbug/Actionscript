@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" creationComplete="loadPic();">
+	<mx:Script>
+		<![CDATA[
+			import mx.charts.chartClasses.NumericAxis;
+			import flash.display.Loader;
+			import flash.net.URLRequest;
+	  		import flash.display.BitmapData;
+	  		import flash.display.Bitmap;		
+	  		import flash.geom.Rectangle;
+	  		import flash.geom.Point;
+	  		
+	  		private var minRadius:Number = 50;
+	  		private var maxRadius:Number = 150;
+
+	  		private var ratio:Number = (maxRadius/minRadius)/10;
+	  		
+			private var lightSpot:Sprite = new Sprite();
+			private var mcLightPic:Sprite = new Sprite();
+			private var mcDarkPic:Sprite = new Sprite();
+			
+			
+			private var picloader1:Loader;
+			private var picloader2:Loader;
+					
+			
+			public function loadPic():void{
+				var urls:String = new String("http://imlab.cs.nccu.edu.tw/~l314/p6.jpg");
+				picloader1 = new Loader();
+				picloader2 = new Loader();
+				
+     			picloader1.load(new URLRequest(urls));
+     			picloader2.load(new URLRequest(urls));
+     			
+     			
+     			//bitmap = Bitmap(picloader1.content);
+     			//this.rawChildren.addChild(picloader);
+				dupPic();
+			}
+						
+			function dupPic():void {		
+				mcLightPic.addChild(picloader1);
+				mcDarkPic.addChild(picloader2);
+
+				mcDarkPic.alpha = 0.5;
+				filterPic();
+			}
+			
+			function filterPic():void {
+				mcDarkPic.addChild(lightSpot);
+
+				lightSpot.graphics.lineStyle(1,0x000000);
+				lightSpot.graphics.beginFill(0x0000FF);
+				lightSpot.graphics.drawCircle(0, 0, minRadius);
+				lightSpot.graphics.endFill();
+
+				lightSpot.x = 300;
+				lightSpot.y = 132;
+				
+				mcLightPic.mask = lightSpot;
+				
+				//mcLightPic.mouseEnabled = false;
+				mcDarkPic.addEventListener(MouseEvent.MOUSE_DOWN, startMove);
+				this.addEventListener(MouseEvent.MOUSE_UP, stopMove); 
+				mcDarkPic.addEventListener(MouseEvent.MOUSE_WHEEL, scaleLightSpot);
+				this.addEventListener(MouseEvent.MOUSE_OUT,stopMove);
+			
+				//mcDarkPic.addEventListener(MouseEvent.MOUSE_MOVE, pointMove);				
+				this.rawChildren.addChild(mcLightPic);
+				this.rawChildren.addChild(mcDarkPic);	
+			}
+			
+			function scaleLightSpot(e:MouseEvent):void{
+				var scaled:Number = 1 + e.delta/27;
+				
+				if(e.delta > 0){
+					if(lightSpot.width >= maxRadius*2){
+						lightSpot.width = maxRadius*2;
+						lightSpot.height = maxRadius*2;
+					}else{
+						lightSpot.width *= (1+ratio);
+						lightSpot.height *= (1+ratio);
+					}	
+				}else{
+					if(lightSpot.width <= minRadius*2){
+						lightSpot.width = minRadius*2;
+						lightSpot.height = minRadius*2;
+					}else{
+						lightSpot.width *= (1-ratio);
+						lightSpot.height *= (1-ratio);
+					}
+				}
+				
+				var r:Rectangle = lightSpot.getBounds(mcLightPic);
+				checkBoundry();				
+			}
+			
+			
+			
+			
+			function cropImage():void{
+				var r:Rectangle = lightSpot.getBounds(mcLightPic);
+	 			var oldBitmap:BitmapData = new BitmapData(picloader1.width, picloader1.height);
+				var newBitmap:BitmapData = new BitmapData(r.width, r.height);/*, true, 0xFF33FF);*/
+				//var bitmap:Bitmap = Bitmap(picloader1.content);
+     			oldBitmap.draw(picloader1);
+     			newBitmap.copyPixels(oldBitmap, r, new Point(0,0));
+//     			var s:Sprite = new Sprite();
+//     			s.graphics.beginBitmapFill(oldBitmap, new Matrix(), false, true);
+    			var bitmap:Bitmap = new Bitmap(newBitmap);
+    			this.myPanel.rawChildren.addChild(bitmap);
+      			bitmap.y = 150;
+				//newBitmap.copyPixels(oldBitmap, r, new Point(700,150));
+				
+				sendData(r);
+				
+			}
+			
+			
+			function sendData(r:Rectangle):void{
+				var request:URLRequest = new URLRequest("http://imlab1.cs.nccu.edu.tw/sna/imageCrop.php");
+				var variables:URLVariables = new URLVariables();
+				variables.destPic = "dest.jpg";
+				variables.srcPic = "http://imlab.cs.nccu.edu.tw/~l314/p6.jpg";
+				variables.recX = r.x;
+				variables.recY = r.y;
+				variables.width = r.width;
+				variables.height = r.height; 
+				
+				request.data = variables;
+				//sendToURL(request);
+				request.method = URLRequestMethod.POST;
+				navigateToURL(request,"_blank");
+				
+			}
+			
+			
+			function startMove(evt:MouseEvent):void {
+				//lightSpot.addEventListener(MouseEvent.MOUSE_MOVE, pointMove);
+				lightSpot.startDrag(true,mcLightPic.getBounds(this));
+			}
+
+
+			function checkBoundry(/*e:MouseEvent*/):void {
+				var r:Rectangle = lightSpot.getBounds(mcLightPic);
+				
+				lightSpot.x = boundedX(lightSpot.x);
+				lightSpot.y = boundedY(lightSpot.y);
+			}
+
+			
+			function stopMove(e:MouseEvent):void {
+				//lightSpot.removeEventListener(MouseEvent.MOUSE_MOVE, pointMove);
+				lightSpot.stopDrag();
+				checkBoundry();	
+			}
+			
+			
+			function boundedX(inX:Number):Number {
+				var r:Rectangle = lightSpot.getBounds(mcLightPic);
+				
+				//trace(lightSpot.contextMenu.areInaccessibleObjectsUnderPoint()
+
+				if ( r.left < 0) {
+					return 0+lightSpot.width/2;
+				}
+				if (r.right > mcLightPic.width) {
+					return mcLightPic.width-lightSpot.width/2;
+				}
+				return inX;
+			}
+
+
+			function boundedY(inY:Number):Number {
+				var r:Rectangle = lightSpot.getBounds(mcLightPic);
+				if ( r.top < 0) {
+					return 0+lightSpot.width/2;
+				}
+				if (r.bottom > mcLightPic.height) {
+					return mcLightPic.height-lightSpot.width/2;
+				}
+				return inY;
+			}
+		]]>
+	</mx:Script>
+	<mx:Panel id="myPanel" title="New Image!!" x="700" y="100" >
+		        <mx:Button id="crop" label="cropImage" click="cropImage()"/> 
+	</mx:Panel>
+       
+</mx:Application>

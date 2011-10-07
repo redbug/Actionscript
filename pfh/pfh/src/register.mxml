@@ -1,0 +1,315 @@
+<mx:Application
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	layout="horizontal"
+    horizontalAlign="center"
+    verticalAlign="middle"
+    creationComplete="init()">
+
+	<mx:RemoteObject id="myservice" 
+		source="app.Register"
+	    destination="amfphp"
+	    fault="faultHandler(event)"
+	    showBusyCursor="true">
+	    <mx:method name="insert" fault="faultHandler(event)">
+	    	<mx:arguments>
+	    		<account>{account.text}</account>
+	    		<contactMail>{email.text}</contactMail>
+	    		<studentId>{studentId.text}</studentId>
+	    		<fullname>{fullname.text}</fullname>
+	    		<sex>{sex.selectedValue}</sex>
+	    		<birthday>{birthday.text}</birthday>
+	    		<astrology>{(astrology.selectedIndex+1)}</astrology>
+	    		<bloodtype>{bloodtype.selectedIndex}</bloodtype>
+	    		<hometown>{hometown.text}</hometown>
+	    		<university>{university.text}</university>
+	    		<attendYear>{attendYear.text}</attendYear>
+	    		<club>{club.text}</club>
+	    		<highSchool>{highschool.text}</highSchool>
+	    		<blog>{blog.text}</blog>
+	    		<album>{album.text}</album>
+	    		<im>{im.text}</im>
+	    	</mx:arguments>
+	    </mx:method>
+	</mx:RemoteObject>
+
+	<mx:Script>
+		<![CDATA[
+			include "app/image.as";
+		
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+			import mx.events.ItemClickEvent;
+			import mx.controls.buttonBarClasses.ButtonBarButton;
+			import mx.utils.ArrayUtil;
+			import mx.rpc.events.FaultEvent;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			
+			[Bindable]
+			public var attendYears:Array = [];
+			[Bindable]
+			public var dp:ArrayCollection;
+			[Bindable]
+			public var reg:String;
+			
+			public var sharedObj:SharedObject;
+			
+			private function getListHandler(event:ResultEvent):void {
+				dp = new ArrayCollection(ArrayUtil.toArray(event.result));
+			}
+        	private function faultHandler(fault:FaultEvent):void {
+        		trace(fault.toString());
+            	//Alert.show(fault.fault.message.toString(), fault.fault.faultCode.toString());
+        	}
+			
+			/*private function resultHandler(evt:ResultEvent):void{
+				myTA.text = evt.result.toString();
+				//trace(evt.result.toString());
+			}*/
+			
+			
+			private function initAttendYear():void {
+				var i:int, j:int;
+				j = 0;
+				for(i = 2008; i > 1910; i--) {
+					attendYears[j++] = i;
+				}
+				sharedObj = SharedObject.getLocal("account", "/");
+				reg = sharedObj.data.account;
+				//sharedObj.clear();
+				
+			}
+
+			// Event handler function uses a static method to show
+	        // a pop-up window with the title, message, and requested buttons.   
+	      	private function submitButtonClickHandler(event:MouseEvent):void {
+	        	var userDetails:String = "You submitted the following details:\r\r";
+	            userDetails += "Contact email: " + email.text + "\r";
+	            userDetails += "Fullname: " + fullname.text + "\r";
+	            userDetails += "Student ID: " + studentId.text + "\r";
+	            userDetails += "Sex: " + sex.selectedValue + "\r";
+	            userDetails += "Birthday: " + birthday.text + "\r";
+	            userDetails += "Astrology: " + astrology.selectedLabel + "\r";
+	            userDetails += "Blood Type: " + bloodtype.selectedLabel + "\r";
+	            userDetails += "Hometown: " + hometown.text + "\r";
+	            userDetails += "University: " + university.text + " " + attendYear.selectedLabel + "\r";
+	            userDetails += "Club: " + club.text + "\r";
+	            userDetails += "High School: " + highschool.text + "\r";
+	            userDetails += "Blog: " + blog.text + "\r";
+	            userDetails += "Album: " + album.text + "\r";
+	            userDetails += "Instant Messager: " + im.text + "\r\r";
+	            
+	            Alert.show(userDetails, "Please check it.", 3, this, alertClickHandler);
+	    	}
+	    	
+		   	// Event handler function for displaying the selected Alert button.
+	        private function alertClickHandler(event:CloseEvent):void {
+	        	if (event.detail == Alert.YES) {
+	            	submit();
+	            	//navigateToURL(new URLRequest('RegAndFilter.html'), '_self');
+	         	}
+	            else {
+	                
+	            }
+	        }
+
+			private function submit():void {
+				myservice.getOperation('insert').send();
+				
+			}
+
+			private function stepClickHandler(event:ItemClickEvent):void {
+				if(event.index == 0) {
+					steps.selectedIndex--;
+				} else if(event.index == 1) {
+					if(steps.selectedIndex <= 3) {
+						steps.selectedIndex++;
+					} else {
+						steps.selectedIndex = steps.selectedIndex;
+					}
+					if(steps.selectedIndex == 4) {
+						submitRegister.enabled="true";
+					}
+				}
+				//myTA.text="Selected button index: " + String(event.index) ;
+			}
+			private function disabledButtons():void {
+				//myTA.text = steps.selectedIndex.toString();
+				if(steps.selectedIndex == 0) {
+					var btn:ButtonBarButton = stepControl.getChildAt(0) as ButtonBarButton;
+					btn.enabled = false;
+				} else {
+					var btn:ButtonBarButton = stepControl.getChildAt(0) as ButtonBarButton;
+					btn.enabled = true;
+				}
+			}
+		]]>
+	</mx:Script>
+	<!--<mx:TextArea id="myTA" width="200" height="100"/>-->
+
+	<mx:Panel title="Register"
+		  width="600"
+		  height="480"
+		  fontSize="11"
+       	  paddingBottom="10" paddingTop="10" 
+       	  paddingLeft="10" paddingRight="10"
+	   	  horizontalAlign="center">
+
+   	  	<mx:TabNavigator width="100%" height="100%" id="steps" creationComplete="initAttendYear();">
+            <mx:Canvas label="Account" width="100%" height="100%">
+		  		<mx:Form width="100%" y="0" x="0">
+		      		<mx:FormItem label="Account email:" width="100%">
+		       			<mx:TextInput id="account" text="{reg}" width="60%" editable="false" color="gray" />
+		       		</mx:FormItem>
+		      		<mx:FormItem label="Contact email:" width="100%">
+		       			<mx:TextInput id="email" width="60%" />
+		       		</mx:FormItem>
+		    	</mx:Form>
+            </mx:Canvas>
+            <mx:Canvas label="Personal" width="100%" height="100%">
+		  		<mx:Form width="100%" y="0" x="0">
+		  			<mx:FormItem label="Full name:" width="100%">
+		  				<mx:TextInput id="fullname" />
+		  			</mx:FormItem>
+		  			<mx:FormItem label="Student ID" width="100%">
+		  				<mx:TextInput id="studentId" />
+		  			</mx:FormItem>
+		      		<mx:FormItem label="Sex:" width="100%">
+						<mx:HBox>
+				      		<mx:RadioButtonGroup id="sex" />
+							<mx:RadioButton groupName="sex" selected="true" id="female" label="Female" value="0" />
+							<mx:RadioButton groupName="sex" id="male" label="Male" value="1" />
+						</mx:HBox>
+		       		</mx:FormItem>
+		       		<mx:FormItem label="Birthday:" width="100%">
+		       			<mx:HBox>
+				        	<mx:DateField id="birthday" yearNavigationEnabled="true" maxYear="2010" minYear="1911" />
+				        	<mx:Label text="   Astrology:" />
+			       			<mx:ComboBox id="astrology">
+			       				<mx:Array>
+			       					<mx:Object data="1" label="魔羯座" />
+			       					<mx:Object data="2" label="水瓶座" />
+			       					<mx:Object data="3" label="雙魚座" />
+			       					<mx:Object data="4" label="牡羊座" />
+			       					<mx:Object data="5" label="金牛座" />
+			       					<mx:Object data="6" label="雙子座" />
+			       					<mx:Object data="7" label="巨蟹座" />
+			       					<mx:Object data="8" label="獅子座" />
+			       					<mx:Object data="9" label="處女座" />
+			       					<mx:Object data="10" label="天秤座" />
+			       					<mx:Object data="11" label="天蠍座" />
+			       					<mx:Object data="12" label="射手座" />
+			       				</mx:Array>
+			       			</mx:ComboBox>				        	
+		       			</mx:HBox>
+		       		</mx:FormItem>
+		       		<mx:FormItem label="Blood type:" width="100%">
+		        		<mx:ComboBox id="bloodtype" selectedIndex="3">
+		        			<mx:Array>
+		        				<mx:Object data="0" label="A" />
+		        				<mx:Object data="1" label="B" />
+		        				<mx:Object data="2" label="AB" />
+		        				<mx:Object data="3" label="O" />
+		        			</mx:Array>
+		        		</mx:ComboBox>
+		       		</mx:FormItem>
+		       		<mx:FormItem label="Hometown:" width="100%">
+		       			<mx:TextInput id="hometown" />
+		       		</mx:FormItem>
+		    	</mx:Form>
+            </mx:Canvas>
+            <mx:Canvas label="Education" width="100%" height="100%" >
+		  		<mx:Form width="100%" y="0" x="0">
+		      		<mx:FormItem label="University:" width="100%">
+		      			<mx:HBox>
+		      				<mx:TextInput id="university" />
+			        		<mx:ComboBox id="attendYear" dataProvider="{attendYears}" text="Attend year" />
+		      			</mx:HBox>
+		       		</mx:FormItem>
+		       		<mx:FormItem label="Club:" width="100%">
+		       			<mx:TextInput id="club" />
+		       		</mx:FormItem>
+		       		<mx:FormItem label="High School:" width="100%">
+		       			<mx:TextInput id="highschool" />
+		       		</mx:FormItem>
+		    	</mx:Form>
+            </mx:Canvas>
+            <mx:Canvas label="Social" width="100%" height="100%">
+		  		<mx:Form width="100%" y="0" x="0">
+		      		<mx:FormItem label="Blog:" width="100%">
+		       			<mx:TextInput id="blog" width="80%" />
+		       		</mx:FormItem>
+		       		<mx:FormItem label="Album:" width="100%">
+		       			<mx:TextInput id="album" width="80%" />
+		       		</mx:FormItem>
+		       		<mx:FormItem label="IM(e.g. MSN):" width="100%">
+		       			<mx:TextInput id="im" width="80%" />
+		       		</mx:FormItem>
+		    	</mx:Form>
+            </mx:Canvas>
+            <mx:Canvas label="Photo" width="100%" height="100%">
+                <!-- cropImage preview -->
+				<mx:Panel id="preview" 
+			  		title="Preview" 
+			  		layout="vertical"
+			  	    dropShadowEnabled="false"
+			  		backgroundColor="#DDDDDD">
+
+				<mx:Image id="preimage" width="300" height="200" />
+			
+				<mx:HSlider id="slider"
+						minimum="1" 
+						maximum="100" 
+						liveDragging="true" 
+						snapInterval="1"
+						tickInterval="10"
+						labels="['min', 'max']"
+					    showDataTip="false"
+					    enabled="false"
+				    	change="scaleLightSpot();" 
+				     width="300"
+						sliderThumbClass="app.MySliderThumb"/>  
+				</mx:Panel>
+
+    <mx:Panel
+        x="339" y="0" 
+        paddingBottom="10" paddingTop="10" 
+        paddingLeft="10" paddingRight="10"
+        dropShadowEnabled="false"
+    >
+        <mx:Text 
+            text="Select your picture" 
+            fontSize="10" 
+        />
+        <mx:TextInput id="picPath" />
+        <mx:Box direction="horizontal" borderStyle="none">
+      	  	<mx:Button id="upload" label="Upload" click="uploadPic()"/>
+        	<mx:Button id="crop" label="Crop" enabled="false" click="cropImage()" /> 
+        </mx:Box>
+
+		<mx:Label text="" />
+		<mx:Image id="precrop" width="50" height="100" baseline="" />
+    </mx:Panel> 				
+				
+            </mx:Canvas>
+        </mx:TabNavigator>
+        
+		<mx:ButtonBar id="stepControl" horizontalGap="10" itemClick="stepClickHandler(event);">
+	    	<mx:dataProvider>
+				<mx:Array>
+	     			<mx:String>上一步</mx:String>
+	     			<mx:String>下一步</mx:String>
+	     		</mx:Array>
+	     	</mx:dataProvider>
+	     </mx:ButtonBar>
+	     
+   		<mx:ControlBar horizontalAlign="center">
+       		<mx:Button
+       			id="submitRegister"
+       			label="Submit"
+       			enabled="false"
+       			click="submitButtonClickHandler(event);"
+       		/>
+  		</mx:ControlBar>
+   	</mx:Panel>
+</mx:Application>
